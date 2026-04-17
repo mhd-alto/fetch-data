@@ -97,16 +97,25 @@ const usersRows = async () => {
         </thead>
     `;
     
-    let rows = header
-    rows += users.map(user => getUserStatsRow(user, posts, comments, albums, photos, todos)).join('');
-    return rows
+    const tbodyRows = users.map(user => getUserStatsRow(user, posts, comments, albums, photos, todos)).join('');
+    
+    return header + '<tbody>' + tbodyRows + '</tbody>';
 };
 
 usersRows()
 .then(html => {
-    let table = new DataTable('#users');
-    document.getElementById("users").innerHTML = html
-  })
+    document.getElementById("users").innerHTML = html;
+    
+    new DataTable('#users', {
+        searching: true,
+        paging: true, 
+        info: true,
+        pageLength: 10,
+        responsive: true,
+        order: [[1, 'asc']]  // Sort by User name
+    });
+})
+.catch(console.error);
 
 
 
