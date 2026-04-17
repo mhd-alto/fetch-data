@@ -103,8 +103,10 @@ const usersRows = async () => {
 };
 
 usersRows()
-  .then(html => document.getElementById("users").innerHTML = html)
-
+.then(html => {
+    let table = new DataTable('#users');
+    document.getElementById("users").innerHTML = html
+  })
 
 
 
