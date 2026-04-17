@@ -1,41 +1,110 @@
-const getTodos = async (userId) =>{
-    let userTodos = await fetch(`https://jsonplaceholder.typicode.com/todos?userId=${userId}`);
-    let userTodosData = await userTodos.json()
-    return userTodosData; 
-}
+const getAllUserData = async () => {
+    const baseUrl = 'https://jsonplaceholder.typicode.com';
+    
+    const [
+        users, 
+        postsRes, 
+        commentsRes, 
+        albumsRes, 
+        photosRes, 
+        todosRes
+    ] = await Promise.all([
+        fetch(`${baseUrl}/users`),
+        fetch(`${baseUrl}/posts`),
+        fetch(`${baseUrl}/comments`),
+        fetch(`${baseUrl}/albums`),
+        fetch(`${baseUrl}/photos`),
+        fetch(`${baseUrl}/todos`)
+    ]);
+    
+    const [usersData, posts, comments, albums, photos, todos] = await Promise.all([
+        users.json(),
+        postsRes.json(),
+        commentsRes.json(),
+        albumsRes.json(),
+        photosRes.json(),
+        todosRes.json()
+    ]);
+    // console.log({ users: usersData, posts, comments, albums, photos, todos })
+    
+    return { users: usersData, posts, comments, albums, photos, todos };
+};
 
-const getAlbumPhotos = async (albumId) =>{
-    let UserAlbumPhotos = await fetch(`https://jsonplaceholder.typicode.com/photos?albumId=${albumId}`);
-    let UserAlbumPhotosData = await UserAlbumPhotos.json();
-    return UserAlbumPhotosData;
-}
+const getUserStatsRow = (user, posts, comments, albums, photos, todos) => {
+    // Post Count
+    const postCount = posts.filter(p => p.userId === user.id).length;
+    
+    // User Albums Count  
+    const albumCount = albums.filter(a => a.userId === user.id).length;
+    
+    // Comment Count (on user's posts)
+    const userPostIds = posts.filter(p => p.userId === user.id).map(p => p.id);
+    const commentCount = comments.filter(c => userPostIds.includes(c.postId)).length;
+    
+    // Photo Count (in user's albums)
+    const userAlbumIds = albums.filter(a => a.userId === user.id).map(a => a.id);
+    const photoCount = photos.filter(ph => userAlbumIds.includes(ph.albumId)).length;
+    
+    // Todo counts
+    const userTodos = todos.filter(t => t.userId === user.id);
+    const completedTodos = userTodos.filter(t => t.completed).length;
+    const incompleteTodos = userTodos.filter(t => !t.completed).length;
+    
+    // console.log(
+    //     `
+    //     <tr>
+    //         <td>${user.id}</td>
+    //         <td>${user.name}</td>
+    //         <td>${postCount}</td>
+    //         <td>${commentCount}</td>
+    //         <td>${albumCount}</td>
+    //         <td>${photoCount}</td>
+    //         <td>${completedTodos}</td>
+    //         <td>${incompleteTodos}</td>
+    //     </tr>
+    // `
+    // )
 
-const getUserAlbums = async (userId) =>{
-    let UserAlbums = await fetch(`https://jsonplaceholder.typicode.com/albums?userId=${userId}`);
-    let UserAlbumsData = await UserAlbums.json();
-    return UserAlbumsData;
-}
+    return `
+        <tr>
+            <td>${user.id}</td>
+            <td>${user.name}</td>
+            <td>${postCount}</td>
+            <td>${commentCount}</td>
+            <td>${albumCount}</td>
+            <td>${photoCount}</td>
+            <td>${completedTodos}</td>
+            <td>${incompleteTodos}</td>
+        </tr>
+    `;
+};
 
-const getPostComments = async (postId) =>{
-    let postComments = await fetch(`https://jsonplaceholder.typicode.com/comments?postId=${postId}`);
-    let postCommentsData = await postComments.json();
-    return postCommentsData;
-}
+const usersRows = async () => {
+    const { users, posts, comments, albums, photos, todos } = await getAllUserData();
+    
+    const header = `
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>User</th>
+                <th>Post Count</th>
+                <th>Comment Count</th>
+                <th>User Albums Count</th>
+                <th>Photo Count</th>
+                <th>Completed Todos</th>
+                <th>Not Completed Todos</th>
+            </tr>
+        </thead>
+    `;
+    
+    let rows = header
+    rows += users.map(user => getUserStatsRow(user, posts, comments, albums, photos, todos)).join('');
+    return rows
+};
 
-const getUserPosts = async (userId) => {
-    let userPosts = await fetch(`https://jsonplaceholder.typicode.com/posts?userId=${userId}`);
-    let userPostsData = await userPosts.json();
-    return userPostsData;
-}   
+usersRows()
+  .then(html => document.getElementById("users").innerHTML = html)
 
-const getUserData  = async() => {
-    let users = await fetch("https://jsonplaceholder.typicode.com/users");
-    let usersData = await users.json();
-    return usersData;
-}
 
-const usersRows = () => {
-    let Users = getUserData().map()
-}
 
-getUserData()
+
